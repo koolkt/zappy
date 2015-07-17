@@ -1,22 +1,22 @@
-#include		<stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <server/c_buffer.h>
-#include <dbg.h>
+#include	<stdio.h>
+#include	<stdlib.h>
+#include	<string.h>
+#include	<assert.h>
+#include	<sys/mman.h>
+#include	<unistd.h>
+#include	<server/c_buffer.h>
+#include	<dbg.h>
 
-#ifndef MAP_ANONYMOUS
-#  define MAP_ANONYMOUS MAP_ANON
+#ifndef		MAP_ANONYMOUS
+#  define	MAP_ANONYMOUS MAP_ANON
 #endif
 
-static char __create_buffer_mirror(t_cbuf* cb)
+static char	_create_buffer_mirror(t_cbuf* cb)
 {
-  char path[] = "/tmp/cb-XXXXXX";
-  int fd;
-  int	status;
-  void *address;
+  char		path[] = "/tmp/cb-XX";
+  int		fd;
+  int		status;
+  void		*address;
 
   fd = mkstemp(path);
   check(fd != -1, "Create_mirror path");
@@ -39,7 +39,7 @@ static char __create_buffer_mirror(t_cbuf* cb)
   return (EXIT_FAILURE);
 }
 
-t_cbuf *new_circular_buffer(const unsigned int order)
+t_cbuf		*new_circular_buffer(const unsigned int order)
 {
   char		s;
   t_cbuf	*this;
@@ -49,34 +49,28 @@ t_cbuf *new_circular_buffer(const unsigned int order)
   this->size = 1UL << order;
   this->head = 0;
   this->tail = 0;
-  s = __create_buffer_mirror(this);
+  s = _create_buffer_mirror(this);
   check(s == EXIT_SUCCESS, "new_circular_buffer");
   return (this);
  error:
   return(NULL);
 }
 
-void cbuf_free(t_cbuf *this)
+void		cbuf_free(t_cbuf *this)
 {
   if (this)
     {
       munmap(this->data, this->size << 1);
       free(this);
-      this = NULL;
     }
   return ;
 }
 
-/* int cbuf_is_empty(const t_cbuf *this) */
-/* { */
-/*   return (this->head == this->tail); */
-/* } */
-
-int cbuf_write(t_cbuf *this, const void *data, const int size)
+int		cbuf_write(t_cbuf *this, const void *data, const int size)
 {
-  int written;
+  int		written;
 
-  /* prevent buffer from getting completely full or over commited */
+  check_mem(this);
   check(cbuf_freespace(this) >= size && data && size > 0, "cbuf_write");
   written = cbuf_freespace(this);
   written = size < written ? size : written;
@@ -89,25 +83,25 @@ int cbuf_write(t_cbuf *this, const void *data, const int size)
   return(0);
 }
 
-void *cbuf_peek(const t_cbuf *this)
+void		*cbuf_peek(const t_cbuf *this)
 {
-  if (!this->n_ev)
+  if (!this || !this->n_ev)
     return (NULL);
   return (this->data + this->head);
 }
 
-void *cbuf_read(t_cbuf *this, const unsigned int size)
+void		*cbuf_read(t_cbuf *this, const unsigned int size)
 {
-  void *end;
+  void		*end;
 
-  if (!this->n_ev)
+  if (!this || !this->n_ev)
     return (NULL);
   end = this->data + this->head;
   this->head += size;
   return (end);
 }
 
-int cbuf_size(const t_cbuf *this)
+int		cbuf_size(const t_cbuf *this)
 {
   if (this)
     return (this->size);
@@ -115,15 +109,19 @@ int cbuf_size(const t_cbuf *this)
     return (0);
 }
 
-int cbuf_usedspace(const t_cbuf *this)
+int		cbuf_usedspace(const t_cbuf *this)
 {
+  if (!this)
+    return (-1);
   if (this->head <= this->tail)
     return (this->tail - this->head);
   else
     return( this->size - (this->head - this->tail));
 }
 
-int cbuf_freespace(const t_cbuf *this)
+int		cbuf_freespace(const t_cbuf *this)
 {
+  if (!this)
+    return (-1);
   return (this->size - cbuf_usedspace(this));
 }
