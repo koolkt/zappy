@@ -13,7 +13,7 @@
 
 static char	_create_buffer_mirror(t_cbuf* cb)
 {
-  char		path[] = "/tmp/cb-XX";
+  char		path[] = "/tmp/cb-XXXXXX";
   int		fd;
   int		status;
   void		*address;

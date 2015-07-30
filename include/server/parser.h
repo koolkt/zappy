@@ -6,6 +6,7 @@
 # define		NOT_EQUAL 1
 # include		<server/c_buffer.h>
 # include		<sys/epoll.h>
+# include		<server/z_epoll.h>
 # define		NEW_CLIENT_CONNECTION ((t_player*)data)->fd == sg_listenfd
 
 typedef enum e_p_state

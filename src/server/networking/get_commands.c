@@ -10,6 +10,7 @@
 int			get_command(void *data)
 {
   int			br;
+  int			state;
   char			buffer[1024];
   t_player		*player;
 
@@ -21,8 +22,11 @@ int			get_command(void *data)
   br = read(player->fd, buffer, 1023);
   check(br > 0, "Read err");
   buffer[br] = '\0';
-  parser(data);
-  check(player->karma > 1, "Player sent too many bad requests");
+  while ((state = parser(data)))
+    {
+      debug("parser returned state %i", state);
+    }
+  /* check(player->karma > 1, "Player sent too many bad requests"); */
   return (EXIT_SUCCESS);
  error:
   if (!br || player->karma < 1)

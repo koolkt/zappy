@@ -62,7 +62,7 @@ static int		my_strcmp(const char **str1, const char **str2)
  *
 */
 
-static void		profile_command(t_player *p, const char *control_str)
+static int		profile_command(t_player *p, const char *control_str)
 {
   const char		*sv;
   const char		*pt;
@@ -75,21 +75,22 @@ static void		profile_command(t_player *p, const char *control_str)
   r = my_strcmp(&p->ch, &pt);
   if (r == EQUAL && p->state != _IN)
     {
-      push_event(p->eventq, p->state, "hello\n", 6);
+      return(EQUAL);
+      /* push_event(p->eventq, p->state, "hello\n", 6); */
     }
   else if (r == INCOMPLETE)
     {
       p->incomp = pt;
-      return ;
+      return (INCOMPLETE);
     }
   if (p->incomp && r != EQUAL)
     p->ch = sv;
   p->incomp = NULL;
   if (p->state == _IN && r == EQUAL)
-    return;
+    return(INCOMPLETE);
   p->state = START;
-  p->karma -= 1;
-  return ;
+  /* p->karma -= 1; */
+  return (-100);
 }
 
 static void		init_letter_to_state()
@@ -132,17 +133,25 @@ static void		init_letter_to_state()
 
 int		parser(t_player *p)
 {
+  int		r;
+
+  r = 0;
   if (!state[START])
     init_letter_to_state();
   if (!p || !p->ch || !*p->ch)
-    return (0);  
+    return (-1);
   if (state[p->state])
     p->state = state[p->state][*p->ch];
   if (p->state && p->state != _P &&
       p->state != _M && p->state != _B &&
       p->state != _S)
     {
-      profile_command(p, commands[p->state]);
+      if (profile_command(p, commands[p->state]) == EQUAL /* && p->state != START */)
+	{
+	  r = p->state;
+	  p->state = START;
+	  return (r);
+	}
     }
   else
     {
@@ -150,7 +159,7 @@ int		parser(t_player *p)
       /* Bug! here the karma 
       will be demenished not only with unknown commands 
       but also with ambigupus letters. FIX THAT*/
-      p->karma -= 1;
+      /*p->karma -= 1;*/
     }
   return (parser(p));
 }
